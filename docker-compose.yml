@@ -1,0 +1,82 @@
+###
+# Defines the docker container setup for development
+##
+
+version: '2'
+
+services:
+    # Web application
+    app:
+        # Define the image
+        build: .
+
+        # Name it
+        container_name: "${APP_NAME}_app"
+
+        # Set the environment to override
+        env_file: .env
+        environment:
+            DB_DRIVER: mysql
+            DB_HOST: db
+            DB_USER: docker
+            DB_PASS: docker
+            DB_NAME: "${APP_NAME}"
+
+        # Mount . to /srv
+        volumes:
+            - ./:/srv
+
+        # Set the working directory
+        working_dir: /srv
+
+        # Start up command
+        command:
+            - python3
+            - run.py
+            - runserver
+            - --debug
+            - --host="0.0.0.0"
+            - --port="${PORT}"
+
+        # Configure ports
+        expose:
+            - "${PORT}"
+        ports:
+            - "${PORT}:${PORT}"
+
+        # Link to MonogoDB Service
+        depends_on:
+            - db
+        links:
+            - db
+    # end app
+
+    # Database
+    db:
+        # Define the image
+        image: mysql:latest
+
+        # Name it
+        container_name: "${APP_NAME}_db"
+
+        # Set up the environment
+        env_file: .env
+        environment:
+            MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+            MYSQL_ONETIME_PASSWORD: "yes"
+            MYSQL_USER: docker
+            MYSQL_PASSWORD: docker
+            MYSQL_DATABASE: "${APP_NAME}"
+
+        # Save off data
+        volumes:
+            - ./storage/db:/var/lib/mysql
+
+        # Configure ports
+        expose:
+            - "3306"
+        ports:
+            - "3306:3306"
+    # end db
+
+# end docker-compose.yml
